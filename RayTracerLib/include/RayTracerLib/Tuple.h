@@ -33,6 +33,6 @@ Tuple operator/(const Tuple& lhs, float rhs);
 float Dot(const Tuple& lhs, const Tuple& rhs);
 Tuple Cross(const Tuple& lhs, const Tuple& rhs);
 
-std::string ToString(const Tuple& tuple);
+[[ nodiscard ]] std::string ToString(const Tuple& tuple);
 
 #endif // TUPLE_H_

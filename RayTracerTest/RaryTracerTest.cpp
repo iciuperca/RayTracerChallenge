@@ -1,16 +1,27 @@
 #define CATCH_CONFIG_MAIN
 
 #include <cmath>
+#include <sstream>
 
 #include <Catch2/catch.hpp>
 
 #include <RayTracerLib/Tuple.h>
 #include <RayTracerLib/RayMath.h>
+#include <RayTracerLib/Color.h>
+#include <RayTracerLib/Canvas.h>
 
 namespace Catch {
-    template<>
+
+	template<>
     struct StringMaker<Tuple> {
         static std::string convert( Tuple const& value ) {
+            return ToString(value);
+        }
+    };
+
+	template<>
+    struct StringMaker<Color> {
+        static std::string convert( Color const& value ) {
             return ToString(value);
         }
     };
@@ -158,4 +169,178 @@ TEST_CASE( "The cross product of two tuples", "[tuple]" )
 
 	REQUIRE(Cross(a, b) == Tuple::CreateVector(-1.0f, 2.0f, -1.0f));
 	REQUIRE(Cross(b, a) == Tuple::CreateVector(1.0f, -2.0f, 1.0f));
+}
+
+TEST_CASE( "Colors are (red, green, blue) tuples", "[color]" )
+{
+    const auto c = Color(-0.5f, 0.4f, 1.7f);
+
+	REQUIRE(FLOAT_EQ(c.r, -0.5f));
+	REQUIRE(FLOAT_EQ(c.g, 0.4f));
+	REQUIRE(FLOAT_EQ(c.b, 1.7f));
+}
+
+TEST_CASE( "Adding colors", "[color]" )
+{
+    const auto c1 = Color(0.9f, 0.6f, 0.75f);
+    const auto c2 = Color(0.7f, 0.1f, 0.25f);
+	REQUIRE((c1 + c2) == Color(1.6f, 0.7f, 1.0f));
+}
+
+TEST_CASE( "Substracting colors", "[color]" )
+{
+    const auto c1 = Color(0.9f, 0.6f, 0.75f);
+    const auto c2 = Color(0.7f, 0.1f, 0.25f);
+	REQUIRE((c1 - c2) == Color(0.2f, 0.5f, 0.5f));
+}
+
+TEST_CASE( "Multiplying a color by a scalar", "[color]" )
+{
+    const auto c = Color(0.2f, 0.3f, 0.4f);
+	REQUIRE((c * 2.0f) == Color(0.4f, 0.6f, 0.8f));
+}
+
+TEST_CASE( "Multiplying colors", "[color]" )
+{
+    const auto c1 = Color(1.0f, 0.2f, 0.4f);
+    const auto c2 = Color(0.9f, 1.0f, 0.1f);
+	REQUIRE((c1 * c2) == Color(0.9f, 0.2f, 0.04f));
+}
+
+TEST_CASE( "Creating a canvas", "[canvas]" )
+{
+    const auto c = Canvas(10, 20);
+	REQUIRE(c.width == 10);
+	REQUIRE(c.height == 20);
+	REQUIRE(c.pixels.size() == c.width * c.height);
+
+	const Color blackColor = {0.0f, 0.0f, 0.0f};
+	for (const auto& pixel : c.pixels)
+	{
+		REQUIRE(pixel == blackColor);
+	}
+}
+
+TEST_CASE( "Writing pixels to a canvas", "[canvas]" )
+{
+	auto c = Canvas(10, 20);
+	const auto red = Color(1.0f, 0.0f, 0.0f);
+	c.WritePixel(2, 3, red);
+	REQUIRE(c.PixelAt(2, 3) == red);
+
+	const auto green = Color(0.0f, 1.0f, 0.0f);
+	for (uint32_t y = 0; y < c.height; ++y)
+	{
+		for (uint32_t x = 0; x < c.width; ++x)
+		{
+			c.WritePixel(x, y, green);
+		}
+	}
+
+	for (const auto& pixel : c.pixels)
+	{
+		REQUIRE(pixel == green);
+	}
+}
+
+TEST_CASE( "Constructing the PPM header", "[canvas]" )
+{
+	const Canvas c(5, 3);
+	const auto ppm = c.ToPpm();
+	std::istringstream iss(ppm);
+	std::string line;
+	size_t lineNo = 0;
+	while (std::getline(iss, line) && lineNo <= 3)
+	{
+	    switch (lineNo)
+	    {
+        case 0:
+	        {
+		        REQUIRE(line == "P3");
+	        }   break;
+        case 1:
+	        {
+		        REQUIRE(line == "5 3");
+	        }   break;
+        case 2:
+	        {
+		        REQUIRE(line == "255");
+	        }   break;
+	    }
+		
+		++lineNo;
+	}
+}
+
+TEST_CASE( "Constructing the PPM pixel data", "[canvas]" )
+{
+	Canvas c(5, 3);
+	const auto c1 = Color(1.5f, 0.0f, 0.0f);
+	const auto c2 = Color(0.0f, 0.5f, 0.0f);
+	const auto c3 = Color(-0.5f, 0.0f, 1.0f);
+
+	c.WritePixel(0, 0, c1);
+	c.WritePixel(2, 1, c2);
+	c.WritePixel(4, 2, c3);
+	
+	const auto ppm = c.ToPpm();
+	std::istringstream iss(ppm);
+	std::string line;
+	size_t lineNo = 0;
+	while (std::getline(iss, line))
+	{
+	    switch (lineNo)
+	    {
+        case 3:
+	        {
+		        REQUIRE(line == "255 0 0 0 0 0 0 0 0 0 0 0 0 0 0");
+	        }   break;
+        case 4:
+	        {
+		        REQUIRE(line == "0 0 0 0 0 0 0 128 0 0 0 0 0 0 0");
+	        }   break;
+        case 5:
+	        {
+		        REQUIRE(line == "0 0 0 0 0 0 0 0 0 0 0 0 0 0 255");
+	        }   break;
+	    }
+
+		++lineNo;
+	}
+}
+
+TEST_CASE( "Splitting long lines in PPM files", "[canvas]" )
+{
+	Canvas c(10, 2);
+	const Color color(1.0f, 0.8f, 0.6f);
+	c.Fill(color);
+
+	const auto ppm = c.ToPpm();
+	std::istringstream iss(ppm);
+	std::string line;
+	size_t lineNo = 0;
+	while (std::getline(iss, line))
+	{
+	    switch (lineNo)
+	    {
+        case 3:
+	        {
+		        REQUIRE(line == "255 204 153 255 204 153 255 204 153 255 204 153 255 204 153 255 204");
+	        }   break;
+        case 4:
+	        {
+		        REQUIRE(line == "153 255 204 153 255 204 153 255 204 153 255 204 153");
+	        }   break;
+        case 5:
+	        {
+		        REQUIRE(line == "255 204 153 255 204 153 255 204 153 255 204 153 255 204 153 255 204");
+	        }   break;
+        case 6:
+	        {
+		        REQUIRE(line == "153 255 204 153 255 204 153 255 204 153 255 204 153");
+	        }   break;
+	    }
+
+		++lineNo;
+	}
 }
