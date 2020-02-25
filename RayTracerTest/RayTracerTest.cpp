@@ -9,6 +9,8 @@
 #include <RayTracerLib/RayMath.h>
 #include <RayTracerLib/Color.h>
 #include <RayTracerLib/Canvas.h>
+#include <RayTracerLib/Matrix.h>
+#include <RayTracerLib/RayMath.h>
 
 namespace Catch {
 
@@ -343,4 +345,95 @@ TEST_CASE( "Splitting long lines in PPM files", "[canvas]" )
 
 		++lineNo;
 	}
+}
+
+TEST_CASE( "Constructing and inspecting a 4x4 matrix", "[matrix]" )
+{
+	const Matrix m(4, 4, {
+		{1.0f, 2.0f, 3.0f, 4.0f},
+		{5.5f, 6.5f, 7.5f, 8.5f},
+		{9.0f, 10.0f, 11.0f, 12.0f},
+		{13.5f, 14.5f, 15.5f, 16.5f},
+	});
+
+	REQUIRE(FLOAT_EQ(m[0][0], 1.0f));
+	REQUIRE(FLOAT_EQ(m[0][3], 4.0f));
+	REQUIRE(FLOAT_EQ(m[1][0], 5.5f));
+	REQUIRE(FLOAT_EQ(m[1][2], 7.5f));
+	REQUIRE(FLOAT_EQ(m[2][2], 11.0f));
+	REQUIRE(FLOAT_EQ(m[3][0], 13.5f));
+	REQUIRE(FLOAT_EQ(m[3][2], 15.5f));
+
+	m[3][2] = 12.6f;
+	FLOAT_EQ(m[3][2], 12.6f);
+}
+
+TEST_CASE( "Constructing and inspecting a 2x2 matrix", "[matrix]" )
+{
+	const Matrix m(2, 2, {
+		{-3.0f, 5.0f},
+		{1.0f, -2.0f},
+	});
+
+	REQUIRE(FLOAT_EQ(m[0][0], -3.0f));
+	REQUIRE(FLOAT_EQ(m[0][1], 5.0f));
+	REQUIRE(FLOAT_EQ(m[1][0], 1.0f));
+	REQUIRE(FLOAT_EQ(m[1][1], -2.0f));
+}
+
+TEST_CASE( "Constructing and inspecting a 3x3 matrix", "[matrix]" )
+{
+	const Matrix m(3, 3, {
+		{-3.0f, 5.0f, 0.0f},
+		{1.0f, -2.0f, -7.0f},
+		{0.0f, 1.0f, 1.0f},
+	});
+
+	REQUIRE(FLOAT_EQ(m[0][0], -3.0f));
+	REQUIRE(FLOAT_EQ(m[0][1], 5.0f));
+	REQUIRE(FLOAT_EQ(m[0][2], 0.0f));
+	REQUIRE(FLOAT_EQ(m[1][0], 1.0f));
+	REQUIRE(FLOAT_EQ(m[1][1], -2.0f));
+	REQUIRE(FLOAT_EQ(m[1][2], -7.0f));
+	REQUIRE(FLOAT_EQ(m[2][0], 0.0f));
+	REQUIRE(FLOAT_EQ(m[2][1], 1.0f));
+	REQUIRE(FLOAT_EQ(m[2][2], 1.0f));
+}
+
+TEST_CASE( "Matrix equality with identical matrices", "[matrix]" )
+{
+	const Matrix a(4, 4, {
+		{1.0f, 2.0f, 3.0f, 4.0f},
+		{5.5f, 6.5f, 7.5f, 8.5f},
+		{9.0f, 8.0f, 7.0f, 6.0f},
+		{5.0f, 4.0f, 3.0f, 2.0f},
+	});
+	
+	const Matrix b(4, 4, {
+		{1.0f, 2.0f, 3.0f, 4.0f},
+		{5.5f, 6.5f, 7.5f, 8.5f},
+		{9.0f, 8.0f, 7.0f, 6.0f},
+		{5.0f, 4.0f, 3.0f, 2.0f},
+	});
+
+	REQUIRE(a == b);
+}
+
+TEST_CASE( "Matrix equality with different matrices", "[matrix]" )
+{
+	const Matrix a(4, 4, {
+		{1.0f, 2.0f, 3.0f, 4.0f},
+		{5.0f, 6.0f, 7.0f, 8.0f},
+		{9.0f, 8.0f, 7.0f, 6.0f},
+		{5.0f, 4.0f, 3.0f, 2.0f},
+	});
+	
+	const Matrix b(4, 4, {
+		{2.0f, 3.0f, 4.0f, 5.0f},
+		{6.0f, 7.0f, 8.0f, 9.0f},
+		{8.0f, 7.0f, 6.0f, 5.0f},
+		{4.0f, 3.0f, 2.0f, 1.0f},
+	});
+
+	REQUIRE(a != b);
 }
