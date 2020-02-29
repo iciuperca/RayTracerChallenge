@@ -27,6 +27,27 @@ namespace Catch {
             return ToString(value);
         }
     };
+
+	template<>
+    struct StringMaker<Matrix2x2> {
+        static std::string convert( Matrix2x2 const& value ) {
+            return ToString(value);
+        }
+    };
+
+	template<>
+    struct StringMaker<Matrix3x3> {
+        static std::string convert( Matrix3x3 const& value ) {
+            return ToString(value);
+        }
+    };
+
+	template<>
+    struct StringMaker<Matrix4x4> {
+        static std::string convert( Matrix4x4 const& value ) {
+            return ToString(value);
+        }
+    };
 }
 
 TEST_CASE( "tuple is equal", "[tuple]" )
@@ -177,9 +198,9 @@ TEST_CASE( "Colors are (red, green, blue) tuples", "[color]" )
 {
     const auto c = Color(-0.5f, 0.4f, 1.7f);
 
-	REQUIRE(FLOAT_EQ(c.r, -0.5f));
-	REQUIRE(FLOAT_EQ(c.g, 0.4f));
-	REQUIRE(FLOAT_EQ(c.b, 1.7f));
+	REQUIRE(Equal(c.r, -0.5f));
+	REQUIRE(Equal(c.g, 0.4f));
+	REQUIRE(Equal(c.b, 1.7f));
 }
 
 TEST_CASE( "Adding colors", "[color]" )
@@ -357,16 +378,16 @@ TEST_CASE( "Constructing and inspecting a 4x4 matrix", "[matrix]" )
 	};
 	const Matrix4x4 m(els);
 
-	REQUIRE(FLOAT_EQ(m[0][0], 1.0f));
-	REQUIRE(FLOAT_EQ(m[0][3], 4.0f));
-	REQUIRE(FLOAT_EQ(m[1][0], 5.5f));
-	REQUIRE(FLOAT_EQ(m[1][2], 7.5f));
-	REQUIRE(FLOAT_EQ(m[2][2], 11.0f));
-	REQUIRE(FLOAT_EQ(m[3][0], 13.5f));
-	REQUIRE(FLOAT_EQ(m[3][2], 15.5f));
+	REQUIRE(Equal(m[0][0], 1.0f));
+	REQUIRE(Equal(m[0][3], 4.0f));
+	REQUIRE(Equal(m[1][0], 5.5f));
+	REQUIRE(Equal(m[1][2], 7.5f));
+	REQUIRE(Equal(m[2][2], 11.0f));
+	REQUIRE(Equal(m[3][0], 13.5f));
+	REQUIRE(Equal(m[3][2], 15.5f));
 
 	m[3][2] = 12.6f;
-	FLOAT_EQ(m[3][2], 12.6f);
+	Equal(m[3][2], 12.6f);
 }
 
 TEST_CASE( "Constructing and inspecting a 2x2 matrix", "[matrix]" )
@@ -378,10 +399,10 @@ TEST_CASE( "Constructing and inspecting a 2x2 matrix", "[matrix]" )
 
 	const Matrix2x2 m(els);
 
-	REQUIRE(FLOAT_EQ(m[0][0], -3.0f));
-	REQUIRE(FLOAT_EQ(m[0][1], 5.0f));
-	REQUIRE(FLOAT_EQ(m[1][0], 1.0f));
-	REQUIRE(FLOAT_EQ(m[1][1], -2.0f));
+	REQUIRE(Equal(m[0][0], -3.0f));
+	REQUIRE(Equal(m[0][1], 5.0f));
+	REQUIRE(Equal(m[1][0], 1.0f));
+	REQUIRE(Equal(m[1][1], -2.0f));
 }
 
 TEST_CASE( "Constructing and inspecting a 3x3 matrix", "[matrix]" )
@@ -393,15 +414,15 @@ TEST_CASE( "Constructing and inspecting a 3x3 matrix", "[matrix]" )
 	};
 	const Matrix3x3 m(els);
 
-	REQUIRE(FLOAT_EQ(m[0][0], -3.0f));
-	REQUIRE(FLOAT_EQ(m[0][1], 5.0f));
-	REQUIRE(FLOAT_EQ(m[0][2], 0.0f));
-	REQUIRE(FLOAT_EQ(m[1][0], 1.0f));
-	REQUIRE(FLOAT_EQ(m[1][1], -2.0f));
-	REQUIRE(FLOAT_EQ(m[1][2], -7.0f));
-	REQUIRE(FLOAT_EQ(m[2][0], 0.0f));
-	REQUIRE(FLOAT_EQ(m[2][1], 1.0f));
-	REQUIRE(FLOAT_EQ(m[2][2], 1.0f));
+	REQUIRE(Equal(m[0][0], -3.0f));
+	REQUIRE(Equal(m[0][1], 5.0f));
+	REQUIRE(Equal(m[0][2], 0.0f));
+	REQUIRE(Equal(m[1][0], 1.0f));
+	REQUIRE(Equal(m[1][1], -2.0f));
+	REQUIRE(Equal(m[1][2], -7.0f));
+	REQUIRE(Equal(m[2][0], 0.0f));
+	REQUIRE(Equal(m[2][1], 1.0f));
+	REQUIRE(Equal(m[2][2], 1.0f));
 }
 
 TEST_CASE( "Matrix equality with identical matrices", "[matrix]" )
@@ -473,4 +494,125 @@ TEST_CASE( "Multiplying two matrices", "[matrix]" )
 	const Matrix4x4 c(elsC);
 
 	REQUIRE((a * b) == c);
+}
+
+TEST_CASE( "Multiplying a matrix and a tuple", "[matrix]" )
+{
+	float els[4][4] = {
+		{1.0f, 2.0f, 3.0f, 4.0f},
+		{2.0f, 4.0f, 4.0f, 2.0f},
+		{8.0f, 6.0f, 4.0f, 1.0f},
+		{0.0f, 0.0f, 0.0f, 1.0f},
+	};
+	const Matrix4x4 a(els);
+
+	const Tuple b(1.0f, 2.0f, 3.0f, 1.0);
+	const Tuple c(18.0f, 24.0f, 33.0f, 1.0);
+
+	REQUIRE((a * b) == c);
+}
+
+TEST_CASE( "Multiplying the identity matrix by a tuple", "[matrix]" )
+{
+	const Tuple a(1.0f, 2.0f, 3.0f, 4.0);
+	REQUIRE((a * Matrix4x4::Identity()) == a);
+}
+
+TEST_CASE( "Transposing a matrix", "[matrix]" )
+{
+	float elsA[4][4] = {
+		{0.0f, 9.0f, 3.0f, 0.0f},
+		{9.0f, 8.0f, 0.0f, 8.0f},
+		{1.0f, 8.0f, 5.0f, 3.0f},
+		{0.0f, 0.0f, 5.0f, 8.0f},
+	};
+	const Matrix4x4 a(elsA);
+
+	float elsB[4][4] = {
+		{0.0f, 9.0f, 1.0f, 0.0f},
+		{9.0f, 8.0f, 8.0f, 0.0f},
+		{3.0f, 0.0f, 5.0f, 5.0f},
+		{0.0f, 8.0f, 3.0f, 8.0f},
+	};
+	const Matrix4x4 b(elsB);
+
+	REQUIRE(a.Transpose() == b);
+}
+
+TEST_CASE( "Transpose the identity matrix", "[matrix]" )
+{
+	REQUIRE(Matrix4x4::Identity().Transpose() == Matrix4x4::Identity());
+}
+
+TEST_CASE( "Calculating the determinant of a 2x2 matrix", "[matrix]" )
+{
+	float els[2][2] = {
+		{ 1.0f,  5.0f},
+		{-3.0f, 2.0f},
+	};
+	const Matrix2x2 m(els);
+
+	REQUIRE(Equal(Determinant(m), 17.0f));
+}
+
+TEST_CASE( "A submatrix of a 3x3 matrrix is a 2x2 matrix", "[matrix]" )
+{
+	const Matrix3x3 m3 = Make3x3Matrix({
+		 1.0f, 5.0f, 0.0f,
+		-3.0f, 2.0f, 7.0f,
+		 0.0f, 6.0f, 3.0f,
+	});
+
+	const Matrix2x2 m2 = Make2x2Matrix({
+		 -3.0f, 2.0f,
+		  0.0f, 6.0f,
+	});
+
+	REQUIRE(m3.Submatrix(0, 2) == m2);
+}
+
+TEST_CASE( "A submatrix of a 4x4 matrrix is a 3x3 matrix", "[matrix]" )
+{
+	const Matrix4x4 m4 = Make4x4Matrix({
+		-6.0f, 1.0f,  1.0f, 6.0f,
+		-8.0f, 5.0f,  8.0f, 6.0f,
+		-1.0f, 0.0f,  8.0f, 2.0f,
+		-7.0f, 1.0f, -1.0f, 1.0f,
+	});
+
+	const Matrix3x3 m3 = Make3x3Matrix({
+		-6.0f, 1.0f, 6.0f,
+		-8.0f, 8.0f, 6.0f,
+		-7.0f,-1.0f, 1.0f,
+	});
+
+	REQUIRE(m4.Submatrix(2, 1) == m3);
+}
+
+TEST_CASE( "Calculate the minor of a 3x3 matrix", "[matrix]" )
+{
+	const Matrix3x3 a = Make3x3Matrix({
+		3.0f,  5.0f,  0.0f,
+		2.0f, -1.0f, -7.0f,
+		6.0f, -1.0f,  5.0f,
+	});
+
+	const auto b = a.Submatrix(1.0f, 0.0f);
+	REQUIRE(Equal(Determinant(b), 25.0f));
+	REQUIRE(Equal(Minor(a, 1.0f, 0.0f), 25.0f));
+}
+
+
+TEST_CASE( "Calculate the cofactor of a 3x3 matrix", "[matrix]" )
+{
+	const Matrix3x3 a = Make3x3Matrix({
+		3.0f,  5.0f,  0.0f,
+		2.0f, -1.0f, -7.0f,
+		6.0f, -1.0f,  5.0f,
+	});
+
+	REQUIRE(Equal(Minor(a, 0.0f, 0.0f), -12.0f));
+	REQUIRE(Equal(Cofactor(a, 0.0f, 0.0f), -12.0f));
+	REQUIRE(Equal(Minor(a, 1.0f, 0.0f), 25.0f));
+	REQUIRE(Equal(Cofactor(a, 1.0f, 0.0f), -25.0f));
 }
