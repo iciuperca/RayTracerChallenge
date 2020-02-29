@@ -349,12 +349,13 @@ TEST_CASE( "Splitting long lines in PPM files", "[canvas]" )
 
 TEST_CASE( "Constructing and inspecting a 4x4 matrix", "[matrix]" )
 {
-	const Matrix m(4, 4, {
+	float els[4][4] = {
 		{1.0f, 2.0f, 3.0f, 4.0f},
 		{5.5f, 6.5f, 7.5f, 8.5f},
 		{9.0f, 10.0f, 11.0f, 12.0f},
 		{13.5f, 14.5f, 15.5f, 16.5f},
-	});
+	};
+	const Matrix4x4 m(els);
 
 	REQUIRE(FLOAT_EQ(m[0][0], 1.0f));
 	REQUIRE(FLOAT_EQ(m[0][3], 4.0f));
@@ -370,10 +371,12 @@ TEST_CASE( "Constructing and inspecting a 4x4 matrix", "[matrix]" )
 
 TEST_CASE( "Constructing and inspecting a 2x2 matrix", "[matrix]" )
 {
-	const Matrix m(2, 2, {
+	float els[2][2] = {
 		{-3.0f, 5.0f},
 		{1.0f, -2.0f},
-	});
+	};
+
+	const Matrix2x2 m(els);
 
 	REQUIRE(FLOAT_EQ(m[0][0], -3.0f));
 	REQUIRE(FLOAT_EQ(m[0][1], 5.0f));
@@ -383,11 +386,12 @@ TEST_CASE( "Constructing and inspecting a 2x2 matrix", "[matrix]" )
 
 TEST_CASE( "Constructing and inspecting a 3x3 matrix", "[matrix]" )
 {
-	const Matrix m(3, 3, {
+	float els[3][3] = {
 		{-3.0f, 5.0f, 0.0f},
 		{1.0f, -2.0f, -7.0f},
 		{0.0f, 1.0f, 1.0f},
-	});
+	};
+	const Matrix3x3 m(els);
 
 	REQUIRE(FLOAT_EQ(m[0][0], -3.0f));
 	REQUIRE(FLOAT_EQ(m[0][1], 5.0f));
@@ -402,38 +406,71 @@ TEST_CASE( "Constructing and inspecting a 3x3 matrix", "[matrix]" )
 
 TEST_CASE( "Matrix equality with identical matrices", "[matrix]" )
 {
-	const Matrix a(4, 4, {
+	float elsA[4][4] = {
 		{1.0f, 2.0f, 3.0f, 4.0f},
 		{5.5f, 6.5f, 7.5f, 8.5f},
 		{9.0f, 8.0f, 7.0f, 6.0f},
 		{5.0f, 4.0f, 3.0f, 2.0f},
-	});
-	
-	const Matrix b(4, 4, {
+	};
+	const Matrix4x4 a(elsA);
+
+	float elsB[4][4] = {
 		{1.0f, 2.0f, 3.0f, 4.0f},
 		{5.5f, 6.5f, 7.5f, 8.5f},
 		{9.0f, 8.0f, 7.0f, 6.0f},
 		{5.0f, 4.0f, 3.0f, 2.0f},
-	});
+	};
+	const Matrix4x4 b(elsB);
 
 	REQUIRE(a == b);
 }
 
 TEST_CASE( "Matrix equality with different matrices", "[matrix]" )
 {
-	const Matrix a(4, 4, {
+	float elsA[4][4] = {
 		{1.0f, 2.0f, 3.0f, 4.0f},
 		{5.0f, 6.0f, 7.0f, 8.0f},
 		{9.0f, 8.0f, 7.0f, 6.0f},
 		{5.0f, 4.0f, 3.0f, 2.0f},
-	});
-	
-	const Matrix b(4, 4, {
+	};
+	const Matrix4x4 a(elsA);
+
+	float elsB[4][4] = {
 		{2.0f, 3.0f, 4.0f, 5.0f},
 		{6.0f, 7.0f, 8.0f, 9.0f},
 		{8.0f, 7.0f, 6.0f, 5.0f},
 		{4.0f, 3.0f, 2.0f, 1.0f},
-	});
+	};
+	const Matrix4x4 b(elsB);
 
 	REQUIRE(a != b);
+}
+
+TEST_CASE( "Multiplying two matrices", "[matrix]" )
+{
+	float elsA[4][4] = {
+		{1.0f, 2.0f, 3.0f, 4.0f},
+		{5.0f, 6.0f, 7.0f, 8.0f},
+		{9.0f, 8.0f, 7.0f, 6.0f},
+		{5.0f, 4.0f, 3.0f, 2.0f},
+	};
+	const Matrix4x4 a(elsA);
+
+	float elsB[4][4] = {
+		{-2.0f, 1.0f, 2.0f, 3.0f},
+		{3.0f, 2.0f, 1.0f, -1.0f},
+		{4.0f, 3.0f, 6.0f, 5.0f},
+		{1.0f, 2.0f, 7.0f, 8.0f},
+	};
+	const Matrix4x4 b(elsB);
+
+	float elsC[4][4] = {
+		{20.0f, 22.0f, 50.0f, 48.0f},
+		{44.0f, 54.0f, 114.0f, 108.0f},
+		{40.0f, 58.0f, 110.0f, 102.0f},
+		{16.0f, 26.0f, 46.0f, 42.0f},
+	};
+	const Matrix4x4 c(elsC);
+
+	REQUIRE((a * b) == c);
 }

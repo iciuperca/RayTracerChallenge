@@ -4,7 +4,6 @@ project("RayTracerLib")
 add_library(RayTracerLib STATIC
     src/Canvas.cpp
     src/Color.cpp
-    src/Matrix.cpp
     src/RayMath.cpp
     src/Tuple.cpp
     include/RayTracerLib/Canvas.h
