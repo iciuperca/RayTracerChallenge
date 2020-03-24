@@ -552,7 +552,7 @@ TEST_CASE( "Calculating the determinant of a 2x2 matrix", "[matrix]" )
 	};
 	const Matrix2x2 m(els);
 
-	REQUIRE(Equal(Determinant(m), 17.0f));
+	REQUIRE(Equal(m.Determinant(), 17.0f));
 }
 
 TEST_CASE( "A submatrix of a 3x3 matrrix is a 2x2 matrix", "[matrix]" )
@@ -598,8 +598,8 @@ TEST_CASE( "Calculate the minor of a 3x3 matrix", "[matrix]" )
 	});
 
 	const auto b = a.Submatrix(1.0f, 0.0f);
-	REQUIRE(Equal(Determinant(b), 25.0f));
-	REQUIRE(Equal(Minor(a, 1.0f, 0.0f), 25.0f));
+	REQUIRE(Equal(b.Determinant(), 25.0f));
+	REQUIRE(Equal(a.Minor(1.0f, 0.0f), 25.0f));
 }
 
 
@@ -611,8 +611,148 @@ TEST_CASE( "Calculate the cofactor of a 3x3 matrix", "[matrix]" )
 		6.0f, -1.0f,  5.0f,
 	});
 
-	REQUIRE(Equal(Minor(a, 0.0f, 0.0f), -12.0f));
-	REQUIRE(Equal(Cofactor(a, 0.0f, 0.0f), -12.0f));
-	REQUIRE(Equal(Minor(a, 1.0f, 0.0f), 25.0f));
-	REQUIRE(Equal(Cofactor(a, 1.0f, 0.0f), -25.0f));
+	REQUIRE(Equal(a.Minor(0.0f, 0.0f), -12.0f));
+	REQUIRE(Equal(a.Cofactor(0.0f, 0.0f), -12.0f));
+	REQUIRE(Equal(a.Minor(1.0f, 0.0f), 25.0f));
+	REQUIRE(Equal(a.Cofactor(1.0f, 0.0f), -25.0f));
+}
+
+
+TEST_CASE( "Calculate the determinant of a 3x3 matrix", "[matrix]" )
+{
+	const Matrix3x3 a = Make3x3Matrix({
+		 1.0f, 2.0f,  6.0f,
+		-5.0f, 8.0f, -4.0f,
+	 	 2.0f, 6.0f,  4.0f,
+	});
+
+	REQUIRE(Equal(a.Cofactor(0, 0), 56.0f));
+	REQUIRE(Equal(a.Cofactor(0, 1), 12.0f));
+	REQUIRE(Equal(a.Cofactor(0, 2), -46.0f));
+	REQUIRE(Equal(a.Determinant(), -196.0f));
+}
+
+TEST_CASE( "Calculate the determinant of a 4x4 matrix", "[matrix]" )
+{
+	const Matrix4x4 a = Make4x4Matrix({
+		-2.0f, -8.0f,  3.0f,  5.0f,
+		-3.0f,  1.0f,  7.0f,  3.0f,
+	 	 1.0f,  2.0f, -9.0f,  6.0f,
+		-6.0f,  7.0f,  7.0f, -9.0f,
+	});
+
+	REQUIRE(Equal(a.Cofactor(0, 0), 690.0f));
+	REQUIRE(Equal(a.Cofactor(0, 1), 447.0f));
+	REQUIRE(Equal(a.Cofactor(0, 2), 210.0f));
+	REQUIRE(Equal(a.Cofactor(0, 3), 51.0f));
+	REQUIRE(Equal(a.Determinant(), -4071.0f));
+}
+
+TEST_CASE( "Testing an invertible matrix for invertibility", "[matrix]" )
+{
+	const Matrix4x4 a = Make4x4Matrix({
+		6.0f,  4.0f, 4.0f, 4.0f,
+		5.0f,  5.0f, 7.0f, 6.0f,
+	 	4.0f, -9.0f, 3.0f, -7.0f,
+		9.0f,  1.0f, 7.0f, -6.0f,
+	});
+
+	REQUIRE(Equal(a.Determinant(), -2120.0f));
+	REQUIRE(a.IsInvertible());
+}
+
+TEST_CASE( "Testing an noninvertible matrix for invertibility", "[matrix]" )
+{
+	const Matrix4x4 a = Make4x4Matrix({
+		-4.0f,  2.0f, -2.0f, -3.0f,
+		 9.0f,  6.0f,  2.0f,  6.0f,
+	 	 0.0f, -5.0f,  1.0f, -5.0f,
+		 0.0f,  0.0f,  0.0f,  0.0f,
+	});
+
+	REQUIRE(Equal(a.Determinant(), 0.0f));
+	REQUIRE_FALSE(a.IsInvertible());
+}
+
+TEST_CASE( "Calculating the inverse of a matrix", "[matrix]" )
+{
+	const Matrix4x4 a = Make4x4Matrix({
+		-5.0f,  2.0f,  6.0f, -8.0f,
+		 1.0f, -5.0f,  1.0f,  8.0f,
+		 7.0f,  7.0f, -6.0f, -7.0f,
+		 1.0f, -3.0f,  7.0f,  4.0f,
+	});
+
+	const Matrix4x4 b = a.Inverse();
+	REQUIRE(Equal(a.Determinant(), 532.0f));
+	REQUIRE(Equal(a.Cofactor(2, 3), -160.0f));
+	REQUIRE(Equal(b[3][2], -160.0f/532.0f));
+	REQUIRE(Equal(a.Cofactor(3, 2), 105.0f));
+	REQUIRE(Equal(b[2][3], 105.0f/532.0f));
+
+	const Matrix4x4 c = Make4x4Matrix({
+		 0.21805f,  0.45113f,  0.24060f, -0.04511f,
+		-0.80827f, -1.45677f, -0.44361f,  0.52068f,
+		-0.07895f, -0.22368f, -0.05263f,  0.19737f,
+		-0.52256f, -0.81391f, -0.30075f,  0.30639f,
+	});
+
+	REQUIRE(b == c);
+}
+
+TEST_CASE( "Calculating the inverse of a another matrix", "[matrix]" )
+{
+	const Matrix4x4 a = Make4x4Matrix({
+		8.0f, -5.0f, 9.0f, 2.0f,
+		7.0f, 5.0f,  6.0f, 1.0f,
+		-6.0f, 0.0f, 9.0f, 6.0f,
+		-3.0f, 0.0f,  -9.0f,  -4.0f,
+	});
+
+	const Matrix4x4 b = Make4x4Matrix({
+		-0.15385, -0.15385, -0.28205, -0.53846,
+		-0.07692, 0.12308, 0.02564, 0.03077,
+		0.35897, 0.35897, 0.43590, 0.92308,
+		-0.69231, -0.69231, -0.76923, -1.92308
+	});
+
+	REQUIRE(a.Inverse() == b);
+}
+
+TEST_CASE( "Calculating the inverse of a third matrix", "[matrix]" )
+{
+	const Matrix4x4 a = Make4x4Matrix({
+		9.0f, 3.0f, 0.0f, 9.0f,
+		-5.0f, -2.0f, -6.0f, -3.0f,
+		-4.0f, 9.0f, 6.0f, 4.0f,
+		-7.0f, 6.0f, 6.0f, 2.0f,
+	});
+	const Matrix4x4 b = Make4x4Matrix({
+		-0.04074f, -0.07778f, 0.14444f, -0.22222f,
+		-0.07778f, 0.03333f, 0.36667f, -0.33333f,
+		-0.02901f, -0.14630f, -0.10926f, 0.12963f,
+		0.17778f, 0.06667f, -0.26667f, 0.33333f
+	});
+
+	REQUIRE(a.Inverse() == b);
+}
+
+TEST_CASE( "Multiplying a product by it's inverse", "[matrix]" )
+{
+	const Matrix4x4 a = Make4x4Matrix({
+		3.0f, -9.0f, 7.0f, 3.0f,
+		3.0f, -8.0f, 2.0f, -9.0f,
+		-4.0f, 4.0f, 4.0f, 1.0f,
+		-6.0f, 5.0f, -1.0f, 1.0f,
+	});
+
+	const Matrix4x4 b = Make4x4Matrix({
+		8.0f, 2.0f, 2.0f, 2.0f,
+		3.0f, -1.0f, 7.0f, 0.0f,
+		7.0f, 0.0f, 5.0f, 4.0f,
+		6.0f, -2.0f, 0.0f, 5.0f
+	});
+
+	const auto c = a * b;
+	REQUIRE((c * b.Inverse()) == a);
 }

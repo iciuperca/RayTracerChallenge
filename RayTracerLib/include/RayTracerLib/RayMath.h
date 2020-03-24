@@ -2,10 +2,9 @@
 #define RAY_MATH_H_
 
 #include <cmath>
+#include <type_traits>
 
 constexpr auto EPSILON = 0.00001f;
-
-#define FLOAT_EQ(a, b) ((fabsf((a) - (b)) < EPSILON) ? true : false)
 
 bool Equalf(float a, float b);
 
@@ -18,7 +17,7 @@ T Abs(T val)
 template <typename T>
 bool Equal(T a, T b)
 {
-	return (Abs(a - b) < EPSILON) ? true : false;
+	return (Abs(a - b) < EPSILON);
 }
 
 template <typename T>

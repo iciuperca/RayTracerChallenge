@@ -2,10 +2,13 @@
 #define MATRIX_H_
 
 #include <cstdint>
+#include <cassert>
 #include <array>
 #include <string>
 #include <sstream>
 #include <iomanip>
+
+#include "RayMath.h"
 
 
 template <size_t N>
@@ -30,119 +33,226 @@ public:
 	{
 	}
 
-	MatrixRowType& operator[](uint32_t row)
-	{
-		return m_elements[row];
-	}
+	inline MatrixRowType& operator[](uint32_t row) { return m_elements[row]; }
+	inline MatrixRowType operator[](uint32_t row) const { return m_elements[row]; }
 
-	MatrixRowType operator[](uint32_t row) const
-	{
-		return m_elements[row];
-	}
+	template <size_t M>
+	friend bool operator==(const Matrix<M>& lhs, const Matrix<M>& rhs);
 
-	friend bool operator==(const Matrix<N>& lhs, const Matrix<N>& rhs)
-	{
-		for (uint32_t i = 0; i < N; ++i)
-		{
-			for (uint32_t j = 0; j < N; ++j)
-			{
-				if (lhs[i][j] != rhs[i][j])
-					return false;
-			}
-		}
+	template <size_t M>
+	friend bool operator!=(const Matrix<M>& lhs, const Matrix<M>& rhs);
 
-		return true;
-	}
+	template <size_t M>
+	friend Matrix<M> operator*(const Matrix<M>& lhs, const Matrix<M>& rhs);
 
-	friend bool operator!=(const Matrix<N>& lhs, const Matrix<N>& rhs)
-	{
-		return !(lhs == rhs);
-	}
+	[[nodiscard]] constexpr size_t Width() { return N; }
+	[[nodiscard]] Matrix Transpose() const;
+	[[nodiscard]] constexpr Matrix<N-1> Submatrix(size_t row, size_t column) const;
+	[[nodiscard]] constexpr Matrix Inverse() const;
+	[[nodiscard]] constexpr float Determinant() const;
+	[[nodiscard]] constexpr float Minor(size_t row, size_t col) const;
+	[[nodiscard]] constexpr float Cofactor(size_t row, size_t col) const;
+	[[nodiscard]] constexpr bool IsInvertible() const;
 
-	friend Matrix<N> operator*(const Matrix<N>& lhs, const Matrix<N>& rhs)
-	{
-		float newMatrixEls[N][N];
-		for (uint32_t i = 0; i < N; ++i)
-		{
-			for (uint32_t j = 0; j < N; ++j)
-			{
-				newMatrixEls[i][j] = 0;
-				for (int k = 0; k < N; ++k)
-				{
-					newMatrixEls[i][j] += lhs[i][k] * rhs[k][j];
-				}
-			}
-		}
-
-		return Matrix<N>(newMatrixEls);
-	}
-
-	constexpr size_t Width()
-	{
-		return N;
-	}
-
-	constexpr static size_t MatrixWidth()
-	{
-		return N;
-	}
-
-	constexpr Matrix<N> Transpose() const
-	{
-		float newMatrixEls[N][N];
-		for (uint32_t i = 0; i < N; ++i)
-		{
-			for (uint32_t j = 0; j < N; ++j)
-			{
-				newMatrixEls[j][i] = m_elements[i][j];
-			}
-		}
-
-		return Matrix<N>(newMatrixEls);
-	}
-
-	constexpr Matrix<N-1> Submatrix(size_t row, size_t column) const
-	{
-		static_assert(N >= 2);
-		float newMatrixEls[N-1][N-1];
-
-		size_t newRow = 0;
-		for (size_t i = 0; i < N; ++i)
-		{
-			size_t newColumn = 0;
-			if (i == row)
-				continue;
-			for (size_t j = 0; j < N; ++j)
-			{
-				if (j == column)
-					continue;
-
-				newMatrixEls[newRow][newColumn] = m_elements[i][j];
-				newColumn++;
-			}
-			newRow++;
-		}
-
-		return Matrix<N-1>(newMatrixEls);
-	}
-
-	static constexpr Matrix<N> Identity()
-	{
-		float newMatrixEls[N][N];
-		for (uint32_t i = 0; i < N; ++i)
-		{
-			for (uint32_t j = 0; j < N; ++j)
-			{
-				const float val = (i == j) ? 1 : 0;
-				newMatrixEls[i][j] = val;
-			}
-		}
-
-		return Matrix<N>(newMatrixEls);
-	}
+	[[nodiscard]] constexpr static size_t MatrixWidth() { return N; }
+	[[nodiscard]] constexpr static  Matrix Identity();
 
 	MatrixElementsType m_elements;
 };
+
+//----------------------------------------------------------------------------------------------------------------------
+
+using Matrix4x4 = Matrix<4>;
+using Matrix3x3 = Matrix<3>;
+using Matrix2x2 = Matrix<2>;
+
+//----------------------------------------------------------------------------------------------------------------------
+
+template<size_t N>
+constexpr Matrix<N-1> Matrix<N>::Submatrix(size_t row, size_t column) const
+{
+	static_assert(N >= 3);
+	float newMatrixEls[N-1][N-1];
+
+	size_t newRow = 0;
+	for (size_t i = 0; i < N; ++i)
+	{
+		size_t newColumn = 0;
+		if (i == row)
+			continue;
+		for (size_t j = 0; j < N; ++j)
+		{
+			if (j == column)
+				continue;
+
+			newMatrixEls[newRow][newColumn] = m_elements[i][j];
+			newColumn++;
+		}
+		newRow++;
+	}
+
+	return Matrix<N-1>(newMatrixEls);
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+
+template <size_t N>
+bool operator==(const Matrix<N>& lhs, const Matrix<N>& rhs)
+{
+	for (uint32_t i = 0; i < N; ++i)
+	{
+		for (uint32_t j = 0; j < N; ++j)
+		{
+			if (!Equal(lhs[i][j], rhs[i][j]))
+				return false;
+		}
+	}
+
+	return true;
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+
+template <size_t N>
+bool operator!=(const Matrix<N>& lhs, const Matrix<N>& rhs)
+{
+	return !(lhs == rhs);
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+
+template <size_t N>
+Matrix<N> operator*(const Matrix<N>& lhs, const Matrix<N>& rhs)
+{
+	float newMatrixEls[N][N];
+	for (uint32_t i = 0; i < N; ++i)
+	{
+		for (uint32_t j = 0; j < N; ++j)
+		{
+			newMatrixEls[i][j] = 0;
+			for (int k = 0; k < N; ++k)
+			{
+				newMatrixEls[i][j] += lhs[i][k] * rhs[k][j];
+			}
+		}
+	}
+
+	return Matrix<N>(newMatrixEls);
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+
+template<size_t N>
+Matrix<N> Matrix<N>::Transpose() const
+{
+	float newMatrixEls[N][N];
+	for (uint32_t i = 0; i < N; ++i)
+	{
+		for (uint32_t j = 0; j < N; ++j)
+		{
+			newMatrixEls[j][i] = m_elements[i][j];
+		}
+	}
+
+	return Matrix<N>(newMatrixEls);
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+
+template <size_t N>
+constexpr Matrix<N> Matrix<N>::Identity()
+{
+	float newMatrixEls[N][N];
+	for (uint32_t i = 0; i < N; ++i)
+	{
+		for (uint32_t j = 0; j < N; ++j)
+		{
+			const float val = (i == j) ? 1 : 0;
+			newMatrixEls[i][j] = val;
+		}
+	}
+
+	return Matrix<N>(newMatrixEls);
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+
+template <size_t N>
+constexpr Matrix<N> Matrix<N>::Inverse() const
+{
+	assert(IsInvertible());
+
+	Matrix<N>::MatrixElementsType elements = {};
+	const auto determinant = Determinant();
+	for (size_t row = 0; row < N; ++row)
+	{
+		for (size_t col = 0; col < N; ++col)
+		{
+			const auto cofactor = Cofactor(row, col);
+			elements[col][row] = cofactor / determinant;
+		}
+	}
+
+	return Matrix<N>(elements);
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+
+template<size_t N>
+constexpr float Matrix<N>::Determinant() const
+{
+	static_assert(N > 2);
+	float result = 0.0f;
+	for (size_t i = 0; i < N; ++i)
+	{
+		result += m_elements[0][i] * Cofactor(0, i);
+	}
+	
+	return result;
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+
+template<size_t N>
+constexpr float Matrix<N>::Minor(size_t row, size_t col) const
+{
+	static_assert(N > 2);
+	return Submatrix(row, col).Determinant();
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+
+template<size_t N>
+constexpr float Matrix<N>::Cofactor(size_t row, size_t col) const
+{
+	static_assert(N > 2);
+	assert(row < N);
+	assert(col < N);
+
+	const auto minor = Minor(row, col);
+	if (((row + col) % 2) != 0)
+		return -minor;
+
+	return minor;
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+
+template<size_t N>
+inline constexpr bool Matrix<N>::IsInvertible() const
+{
+	return !Equal(Determinant(), 0.0f);
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+
+template<>
+constexpr float Matrix<2>::Determinant() const
+{
+	return m_elements[0][0] * m_elements[1][1] - m_elements[0][1] * m_elements[1][0];
+}
+
+//----------------------------------------------------------------------------------------------------------------------
 
 template <size_t N>
 std::string ToString(const Matrix<N>& matrix)
@@ -172,7 +282,6 @@ std::string ToString(const Matrix<N>& matrix)
 			len += 2;
 		if (number >= 10)
 			len += 1;
-
 
 		return len;
 	};
@@ -208,9 +317,7 @@ std::string ToString(const Matrix<N>& matrix)
 	return ss.str();
 }
 
-using Matrix4x4 = Matrix<4>;
-using Matrix3x3 = Matrix<3>;
-using Matrix2x2 = Matrix<2>;
+//----------------------------------------------------------------------------------------------------------------------
 
 Matrix2x2 Make2x2Matrix(const std::array<float, Matrix2x2::MatrixWidth()*Matrix2x2::MatrixWidth()>& elements)
 {
@@ -222,6 +329,8 @@ Matrix2x2 Make2x2Matrix(const std::array<float, Matrix2x2::MatrixWidth()*Matrix2
 
 	return Matrix2x2(matrixElements); 
 }
+
+//----------------------------------------------------------------------------------------------------------------------
 
 Matrix3x3 Make3x3Matrix(const std::array<float, Matrix3x3::MatrixWidth()*Matrix3x3::MatrixWidth()>& elements)
 {
@@ -242,6 +351,7 @@ Matrix3x3 Make3x3Matrix(const std::array<float, Matrix3x3::MatrixWidth()*Matrix3
 	return Matrix3x3(matrixElements); 
 }
 
+//----------------------------------------------------------------------------------------------------------------------
 
 Matrix4x4 Make4x4Matrix(const std::array<float, Matrix4x4::MatrixWidth()*Matrix4x4::MatrixWidth()>& elements)
 {
@@ -269,6 +379,8 @@ Matrix4x4 Make4x4Matrix(const std::array<float, Matrix4x4::MatrixWidth()*Matrix4
 	return Matrix4x4(matrixElements); 
 }
 
+//----------------------------------------------------------------------------------------------------------------------
+
 Tuple operator*(const Matrix4x4& lhs, const Tuple& rhs)
 {
 	const float x = rhs.x * lhs[0][0] + rhs.y * lhs[0][1] + rhs.z * lhs[0][2] + rhs.w * lhs[0][3];
@@ -279,29 +391,13 @@ Tuple operator*(const Matrix4x4& lhs, const Tuple& rhs)
 	return {x, y, z, w};
 }
 
+//----------------------------------------------------------------------------------------------------------------------
+
 Tuple operator*(const Tuple& lhs, const Matrix4x4& rhs)
 {
 	return operator*(rhs, lhs);
 }
 
-float Determinant(const Matrix<2>& matrix)
-{
-	return matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0];
-}
-
-float Minor(const Matrix<3>& matrix, size_t row, size_t col)
-{
-	const auto subMatrix = matrix.Submatrix(row, col);
-	return Determinant(subMatrix);
-}
-
-float Cofactor(const Matrix<3>& matrix, size_t row, size_t col)
-{
-	const auto minor = Minor(matrix, row, col);
-	if (((row + col) % 2) != 0)
-		return -minor;
-
-	return minor;
-}
+//----------------------------------------------------------------------------------------------------------------------
 
 #endif // !MATRIX_H_
