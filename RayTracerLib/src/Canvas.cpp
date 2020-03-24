@@ -1,6 +1,6 @@
 #include "../include/RayTracerLib/Canvas.h"
+#include "../include/RayTracerLib/RayMath.h"
 
-#include <algorithm>
 #include <sstream>
 
 Canvas::Canvas(const uint32_t w, const uint32_t h): width(w), height(h)
